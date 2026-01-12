@@ -1,5 +1,6 @@
 ﻿namespace SingleResponsibleStudent
 {
+    // Клас для зберігання особистих даних студента
     public class Person
     {
         public required string FirstName { get; init; } = "";
@@ -7,13 +8,15 @@
         public string? Patronymic { get; init; }
         public DateOnly BirthDate { get; init; }
 
-        public string GetFullName() => $"{LastName} {FirstName} " +
-            $"{Patronymic}".Trim();
+        public string GetFullName() => 
+            $"{LastName} {FirstName} {Patronymic}".Trim();
     }
 
 
+    // Допоміжний клас для роботи зі знаком зодіаку
     public static class AstroProfile
     {
+        // Єдина відповідальність: визначити знак зодіаку через сервіс
         public static string GetZnakZodiaka(DateOnly birthDate,
             IHoroscopeService? service)
         {
@@ -23,6 +26,7 @@
     }
 
 
+    // Клас, що описує адресу
     public class Address
     {
         public string? Country { get; init; }
@@ -31,11 +35,13 @@
         public string? Street { get; init; }
         public ushort? HouseNumber { get; init; }
         public char? Korpus { get; init; }
-        public string? PostalCode { get; private set; }
+        public string? PostalCode { get; private set; }  // лише через метод
 
+        // Повертає нову адресу з доданим/оновленим поштовим індексом
         public Address WithPostalCode(IPostalCodeService? service)
         {
             if (service is null) return this;
+
             var postalCode = service.ResolvePostalCode(this);
             return new Address
             {
@@ -51,6 +57,7 @@
     }
 
 
+    // Інформація про навчання студента
     public class StudyInfo
     {
         public DateOnly StartDate { get; init; }
@@ -58,9 +65,12 @@
         public string? GroupName { get; init; }
         public string? Specialization { get; init; }
         public int StudentsCount { get; init; }
+
+        public void AdvanceCourse() => Kurs++;
     }
 
 
+    // Відвідуваність занять та запізнення
     public class Attendance
     {
         public int LessonsVisited { get; set; }
@@ -68,34 +78,67 @@
     }
 
 
+    // Успішність з домашніх завдань
     public class HomeworkPerformance
     {
         public int[]? DzRates { get; set; }
         public float DzAverageRate { get; private set; }
+
+        public void RecalculateAverage()
+        {
+            DzAverageRate = DzRates is { Length: > 0 }
+                ? (float)DzRates.Average()
+                : 0;
+        }
     }
 
 
+    // Успішність з практичних занять
     public class PracticePerformance
     {
         public int[]? PracticeRates { get; set; }
         public float PracticeAverageRate { get; private set; }
+
+        public void RecalculateAverage()
+        {
+            PracticeAverageRate = PracticeRates is { Length: > 0 }
+                ? (float)PracticeRates.Average()
+                : 0;
+        }
     }
 
 
+    // Успішність з іспитів
     public class ExamPerformance
     {
         public int[]? ExamRates { get; set; }
         public float ExamAverageRate { get; private set; }
+
+        public void RecalculateAverage()
+        {
+            ExamAverageRate = ExamRates is { Length: > 0 }
+                ? (float)ExamRates.Average()
+                : 0;
+        }
     }
 
 
-    public class ZachetPerformance
+    // Успішність із заліків
+    public class ZalikPerformance
     {
-        public int[]? ZachetRates { get; set; }
-        public float ZachetAverageRate { get; private set; }
+        public int[]? ZalikRates { get; set; }
+        public float ZalikAverageRate { get; private set; }
+
+        public void RecalculateAverage()
+        {
+            ZalikAverageRate = ZalikRates is { Length: > 0 }
+                ? (float)ZalikRates.Average()
+                : 0;
+        }
     }
 
 
+    // Успішність з одного конкретного предмета
     public class SubjectPerformance
     {
         public required string SubjectName { get; init; } = "";
@@ -104,18 +147,20 @@
         public HomeworkPerformance Homework { get; } = new();
         public PracticePerformance Practice { get; } = new();
         public ExamPerformance Exam { get; } = new();
-        public ZachetPerformance Zachet { get; } = new();
+        public ZalikPerformance Zalik { get; } = new();
     }
 
 
+    // Головний агрегат - студент
     public class StudentAggregate
     {
         public Person Person { get; private set; }
         public Address Address { get; private set; }
         public StudyInfo StudyInfo { get; private set; }
         public Attendance Attendance { get; private set; }
+        private readonly List<SubjectPerformance> _subjects = [];
 
-        private readonly List<SubjectPerformance> _subjects = new();
+        // Список усіх предметів (тільки для читання)
         public IReadOnlyCollection<SubjectPerformance> Subjects =>
             _subjects.AsReadOnly();
 
@@ -131,6 +176,7 @@
             Attendance = new Attendance();
         }
 
+        // Додає або оновлює інформацію про предмет
         public void AddOrUpdateSubject(SubjectPerformance subject)
         {
             var existing = _subjects.FirstOrDefault(s =>
@@ -144,12 +190,14 @@
     }
 
 
+    // Інтерфейс для отримання знаку зодіаку
     public interface IHoroscopeService
     {
         string ResolveZodiacSign(DateOnly birthDate);
     }
 
 
+    // Інтерфейс для визначення поштового індексу
     public interface IPostalCodeService
     {
         string? ResolvePostalCode(Address address);
@@ -198,14 +246,3 @@
 //    public float ZachetAverageRate { get; set; }
 //    public double TotalAverageRate { get; set; }
 //}
-
-//class Program
-//{
-//    static void Main()
-//    {
-
-//    }
-//}
-
-//// код проєкта викласти в публічний репозиторій, посилання на який 
-///відправити в коментар до цього ДЗ
